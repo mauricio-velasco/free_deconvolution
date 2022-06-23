@@ -1,5 +1,6 @@
 import math
 import sympy as sp
+import numpy as np
 
 def newton_steps(lh_function, rh_value, init_guess, num_newton_steps = 1):
     """We wish to solve an equation of the form f(z)=w_0
@@ -60,3 +61,77 @@ def homotopy_path_lift(path, t_init,t_final, num_computed_points, covering_map, 
         current_position_z = next_position_z
 
     return measured_times, lifted_positions
+
+
+def compute_companion_matrix(p):
+    """Computes the companion matrix of a sympy polynomial
+    p(z) given the polynomial and the variable
+    """
+    p = sp.poly(p)
+    p=p.monic()
+    d = p.degree()
+    coeffs_vector = p.all_coeffs()
+    companion_matrix = np.zeros([d,d],float)
+    for k in range(d-1):
+        companion_matrix[k+1,k] = 1.0
+    for k in range(d):
+        companion_matrix[k,d-1] =(-1)*coeffs_vector[d-k] 
+    return companion_matrix
+
+def compute_roots(p,num_newton_steps = 10):
+    """Computes an estimate of the roots of a polynomial p by computing an initial guess from 
+    companion matrices and successively improving those initial guesses with Newton.
+    """
+    p = sp.poly(p)
+    M = compute_companion_matrix(p)
+    initial_guesses = list(np.linalg.eigvals(M))
+    final_estimates = []
+    rh_value = 0.0 
+    for initial_guess in initial_guesses:
+        estimates, final_estimate = newton_steps(p, rh_value, initial_guess, num_newton_steps=num_newton_steps)
+        final_estimates.append(final_estimate)
+    return final_estimates
+
+def compute_ramification_and_branch_points(covering_map, num_newton_steps):
+    """Given a RATIONAL covering_map we compute its ramification 
+    and branch points to high accuracy combining companion matrices and Newton's method"""
+    ramification_points = []
+    branch_points = []
+    covering_map_symbols = list(covering_map.free_symbols)
+    z = covering_map_symbols[0]
+    covering_map_prim = sp.diff(covering_map,z) 
+    rat = sp.ratsimp(covering_map_prim)   
+    ramification_poly = sp.fraction(rat)[0]
+    ramification_poly = sp.poly(ramification_poly)#we make it monic
+    companion_matrix = compute_companion_matrix(ramification_poly)
+    initial_guesses = np.linalg.eigvals(companion_matrix)    
+    rh_value = 0.0 
+    #Since evaluating the derivative covering_map_prim, or its derivative is not bad
+    #It is perhaps better to search for a zero of the derivative of the original covering map instead of
+    #only a zero of its numerator: #TODO: Understand this
+    for initial_guess in initial_guesses:
+        estimates, final_estimate = newton_steps(covering_map_prim, rh_value, initial_guess, num_newton_steps=num_newton_steps)
+        ramification_points.append(final_estimate)
+        branch_points.append(covering_map.subs(z,final_estimate).evalf())
+    return ramification_points, branch_points
+
+
+
+if __name__=="__main__":
+    N = 25
+    z = sp.symbols("z")
+    p = sp.prod([z-t for t in range(N)])
+    M = compute_companion_matrix(p)
+    roots = list(np.linalg.eigvals(M))
+    #NOTE: When N grows, like 40, the initial guesses coming from companion matrices suck
+    #they even become complex numbers with imaginary parts that are NOT numerically zero.
+    #the proverbial ill-conditioning of the monomial basis.
+    #We can try correcting them using Newton...
+    newton_roots = compute_roots(p,num_newton_steps=10)
+    # Interestingly, when the degree is largish, around 25 Newton's method does not 
+    # improve the quality of the solution noticeably!! This is kind of interesting since Newton 
+    # relies only in evaluating the polynomial (and does not rely on the monomial basis). 
+    # Off course, even a polynomial can be written in ways that make it easier or harder to evaluate.
+    # Perhaps keeping the poles and not extracting the numerator is better for evaluation? 
+    # Because the derivative of m(z) is an easy to evaluate sum of ratios.
+
