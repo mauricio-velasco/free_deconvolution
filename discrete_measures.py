@@ -34,16 +34,32 @@ class Positive_Points_Measure:
         summands = [w[k]*t[k]/(z-t[k]) for k in range(self.num_atoms) ]
         return (sum(summands))
 
+    def expected_value_func(self,sp_target_function):
+        sp_target_function_symbols = list(sp_target_function.free_symbols)
+        v = sp_target_function_symbols[0]
+        w = self.weights
+        t = self.atoms
+        summands = [w[k]*sp_target_function.subs(v,t[k]).evalf() for k in range(self.num_atoms)]
+        return sum(summands)
 
+    def numerical_integration_path(self,sp_target_function, samples_path):
+        #TODO: complete this...
 
 if __name__ == "__main__":
     #Example usage
-    N = 3
+    N = 10
     atoms = np.random.rand(N)#random atoms in [0,1]
     weights = np.random.rand(N)#random atoms in [0,1]
     weights = weights/np.sum(weights)
     DM = Positive_Points_Measure(atoms,weights)
     g = DM.Gfunction()
     m = DM.Mfunction()
+    z = sp.symbols("z")       
     h = z*g-1 - m
     h.simplify()#Note that this is, numerically, equal to zero because the numerator is
+    mprim = sp.diff(m,z)
+    ramif_poly = sp.fraction(mprim.ratsimp())[0]
+    ramif_poly = sp.poly(ramif_poly)
+    monic_ramif_poly = ramif_poly.monic()
+    monic_ramif_poly.all_coeffs()
+    monic_ramif_poly.degree()

@@ -17,7 +17,6 @@ sp.fraction(ratio) #returns a vector with numerator and denominator
 rh_value = f.subs(z,4+3*sp.I)
 initial_guess = 3+2*sp.I
 lh_function = f
-lh_function_prime = sp.diff(f,z) 
 iterates, final = newton_steps(lh_function, rh_value, initial_guess, num_newton_steps = 10)
 print(iterates)
 print(final) #Notice awesome agreement.
@@ -94,3 +93,26 @@ num_newton_steps = 10
 ramification_points, branch_points = compute_ramification_and_branch_points(covering_map, num_newton_steps)
 ramification_points
 branch_points
+
+# Example 5: For a discrete measure mu we will compute the operator \ell_\mu in two ways:
+# directly from the definition of the measure and via contour integrals of the function G(z)
+# we are hoping to compare their accuracy (since the G function is, in general, 
+# easily recoverable on a contour).
+
+N = 5
+atoms = np.random.rand(N)#random atoms in [0,1]
+weights = np.random.rand(N)#random atoms in [0,1]
+weights = weights/np.sum(weights)
+DM = Positive_Points_Measure(atoms,weights)
+Gfunc = DM.Gfunction() #This is the rational G function of the measure
+
+#Next we create a set of points along a contour which encloses the interval [0,1]
+t = sp.symbols("t")
+path = 2*sp.cos(t)+2*sp.I*sp.sin(t)
+M=200
+points_sample_on_path = [path.subs(t,x*2*sp.pi/M).evalf() for x in range(M)]
+#We wish to estimate the expected value of the function T
+x = sp.symbols("x")
+T = sp.I**x      
+DM.expected_value_func(T)
+#Numerical integration via path
