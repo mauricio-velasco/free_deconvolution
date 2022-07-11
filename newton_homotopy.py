@@ -1,6 +1,7 @@
 import math
 import sympy as sp
 import numpy as np
+import pdb
 
 def newton_steps(lh_function, rh_value, init_guess, num_newton_steps = 1):
     """We wish to solve an equation of the form f(z)=w_0
@@ -23,6 +24,107 @@ def newton_steps(lh_function, rh_value, init_guess, num_newton_steps = 1):
         current_value = next_value
     return values_list, next_value
 
+
+def newton_implicit_eqn_solver(
+    dependent_variable, independent_variable, implicit_equation, 
+    current_indep_value, current_dep_guess, 
+    num_newton_steps
+    ):
+    """Given an implicit equation F(z,y) = 0 
+    where z is the independent var and y the dependent variable
+    Try to find y with F(z_{t+1},y)=0 knowing 
+    an initial guess for y.
+    """
+    z = independent_variable
+    y = dependent_variable
+    F = implicit_equation
+    Fy = sp.diff(F,y)
+    #We improve our initial guess with Newton's method...
+    current_y = current_dep_guess
+    for k in range(num_newton_steps):
+        num = F.subs([(z, current_indep_value),(y, current_y)]).evalf()
+        den = Fy.subs([(z, current_indep_value),(y, current_y)]).evalf()
+        next_y = current_y -(num/den)
+        current_y = next_y.evalf()
+    return current_y
+
+def implicit_homotopy_lift(
+    dependent_variable, independent_variable, implicit_equation, 
+    current_indep_value, current_dep_value, next_indep_value 
+    ):
+    """Given an implicit equation F(z,y) = 0 
+    where z is the independent var and y the dependent variable    
+    Try to estimate y with F(z_{t+1},y)=0 with homotopy methods knowing 
+    a current pair (z_t, y_t) with F(z_t,y_t) = 0
+    """
+    z = independent_variable
+    y = dependent_variable
+    F = implicit_equation
+    Fy = sp.diff(F,y)
+    Fz = sp.diff(F,z)
+    num = Fz.subs([(z, current_indep_value),(y, current_dep_value)]).evalf()
+    den = Fy.subs([(z, current_indep_value),(y, current_dep_value)]).evalf()
+    der = (-1)*(num/den)
+    homotopy_guess_y = current_dep_value + (next_indep_value-current_indep_value) * der
+    return (homotopy_guess_y.evalf())
+
+
+def homotopy_plus_Newton_implicit_function_computation(
+    dependent_variable, independent_variable, implicit_equation, 
+    independent_variable_sample_path, dependent_var_initial_value,
+    num_newton_steps_per_point = 10, is_path_a_contour = True
+    ):
+    """Given: 
+    (1) an implicit equation F(z,y) = 0 
+    where z is the independent var and y the dependent variable    
+    
+    (2) A collection of z samples along a path {z_t}
+    (3) An initial lift y_0 with F(z_0,y_0) = 0
+
+    The function returns a vector of values y_t of the same length as z_t
+    with F(y_t,z_t) = 0 where y_t is the unique lift of the path z_t 
+    on the surface F(y,z) = 0
+
+    CAVEAT: The algorithm assumes implicitly that the lines joining the z_t do not
+    cross branch points of the cover defined by F.
+    """
+    result = []
+    current_dep_guess = dependent_var_initial_value
+
+    for k in range(len(independent_variable_sample_path)-1):
+        #First we use Newton's method to refine the current guess for solution
+        current_z_point = independent_variable_sample_path[k]
+        current_y_estimate = newton_implicit_eqn_solver(
+            dependent_variable = dependent_variable, 
+            independent_variable = independent_variable, 
+            implicit_equation= implicit_equation,
+            current_indep_value = current_z_point,
+            current_dep_guess = current_dep_guess,
+            num_newton_steps=num_newton_steps_per_point
+            )
+        result.append(current_y_estimate.evalf())
+        next_z_point = independent_variable_sample_path[k+1]
+        current_dep_guess = implicit_homotopy_lift(
+            dependent_variable=dependent_variable,
+            independent_variable=independent_variable,
+            implicit_equation=implicit_equation,
+            current_indep_value=current_z_point,
+            current_dep_value = current_y_estimate,
+            next_indep_value=next_z_point)
+
+    #We need to compute one last newton step from the final homotopy
+    current_z_point = next_z_point
+    current_y_estimate = newton_implicit_eqn_solver(
+        dependent_variable = dependent_variable, 
+        independent_variable = independent_variable, 
+        implicit_equation= implicit_equation,
+        current_indep_value = current_z_point,
+        current_dep_guess = current_dep_guess,
+        num_newton_steps=num_newton_steps_per_point
+        )
+    result.append(current_y_estimate.evalf())
+
+    return np.array(result)
 
 def homotopy_path_lift(path, t_init,t_final, num_computed_points, covering_map, initial_lifted_point, num_newton_steps_per_t = 10):
     """Given a path p(t), an interval [t_init,t_final], a covering space map w=f(z)

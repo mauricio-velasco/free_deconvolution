@@ -42,8 +42,6 @@ class Positive_Points_Measure:
         summands = [w[k]*sp_target_function.subs(v,t[k]).evalf() for k in range(self.num_atoms)]
         return sum(summands)
 
-    def numerical_integration_path(self,sp_target_function, samples_path):
-        #TODO: complete this...
 
 if __name__ == "__main__":
     #Example usage

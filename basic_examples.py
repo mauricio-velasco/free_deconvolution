@@ -94,6 +94,9 @@ ramification_points, branch_points = compute_ramification_and_branch_points(cove
 ramification_points
 branch_points
 
+
+
+
 # Example 5: For a discrete measure mu we will compute the operator \ell_\mu in two ways:
 # directly from the definition of the measure and via contour integrals of the function G(z)
 # we are hoping to compare their accuracy (since the G function is, in general, 
