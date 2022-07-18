@@ -2,7 +2,8 @@ import numpy as np
 import sympy as sp
 import pdb
 import matplotlib.pyplot as plt
-
+from path_integrals import path_integral
+from newton_homotopy import homotopy_plus_Newton_implicit_function_computation
 
 def trigonometric_chebyshev_polynomials_vector(z,max_degree):
     """Given a sympy symbol z and a max_degree
@@ -51,6 +52,7 @@ def scaled_weight_function(z,left_bound,right_bound):
     new_z = (1/(b-a))*(2*z-a-b) 
     return f.subs(z,new_z)
 
+
 def parallelogram_integration(function_values,step_size):
     #Given the function values at a sequence of points we compute a parallelogram_integration
     number_evaluations = len(function_values)-1
@@ -62,7 +64,7 @@ def parallelogram_integration(function_values,step_size):
 
 def tchebyshev_coefficients_vector(z,sp_func, left_bound, right_bound, max_degree, num_segments_for_approximation):
     """We do numerical integration on the circle because on the interval the convergence is EXTREMELY slow
-    so we use the trigonometric version of tchebyshev polys
+    so we use the trigonometric version of tchebyshev polys. This function computes the coefficients in the Chebyshev expansion of a function
     """
     a = left_bound
     b = right_bound
@@ -126,6 +128,45 @@ def evaluator_for_tchebyshev_series(coeffs_vector, left_bound,right_bound):
         return np.sum([adjusted_vector[k]*Scaled_tch_List[k].subs(x,point).evalf() for k in range(max_degree)])        
     return function_value
 
+#FOURIER SERIES on interval computation
+
+def Fourier_basis_vectors(z,max_degree, symmetric_interval_length = 1.0):
+    #Given a maximum degree returns a vector of the complex fourier basis
+    M = max_degree
+    L = symmetric_interval_length
+    return([sp.exp((sp.pi*sp.I*k*z)/L) for k in range(-max_degree, max_degree+1)])
+
+def Fourier_coefficients_vector(z,sp_func, max_degree, num_segments_for_approximation, symmetric_interval_length = 1.0):
+    #TODO: Readjust for arbitrary interval, not just [-1,1]    
+    L = symmetric_interval_length
+    angular_step_size = (2.0*L)/(num_segments_for_approximation)
+    angles = np.arange((-1.0)*L, L+angular_step_size, angular_step_size)#it is essential to add the extra angular step size, otherwise we miss one rectangle due to python conventions.
+    sp_new_func_values = [sp_func.subs(z,angle).evalf() for angle in angles]
+    fourier_basis = Fourier_basis_vectors(z,max_degree)
+    fourier_basis.reverse() #reversing conjugates the list, makng exponents negative
+    coeffs = []
+    #Next we compute the integrals of the products
+    for k in range(len(fourier_basis)):
+            fourier_poly = fourier_basis[k]
+            fourier_poly_values = np.array([fourier_poly.subs(z,angle).evalf() for angle in angles])
+            function_values = sp_new_func_values * fourier_poly_values
+            integral_estimate = path_integral(angles, function_values, is_path_a_contour=False)
+            coeffs.append((1/(2.0*L))*integral_estimate)
+    return coeffs
+    
+
+def evaluator_for_fourier_series(coeffs_vector):
+    x = sp.symbols("x")
+    max_degree = int((len(coeffs_vector)-1)/2)
+    fourier_basis_vectors = Fourier_basis_vectors(x, max_degree = max_degree)
+
+    def function_value(point):
+        return sp.re(np.sum([coeffs_vector[k]*(fourier_basis_vectors[k].subs(x,point).evalf()) for k in range(len(coeffs_vector))]))       
+
+    return function_value
+
+
+
 if __name__=="__main__":
     #Usage examples:
     #Construction of Tchebyshev polynomials of degree at most N-1:
@@ -140,7 +181,7 @@ if __name__=="__main__":
     #Orthogonality verification of scaled polynomials:
     #test_ortogonality(max_degree =20, left_bound = -1.0, right_bound = 3.0,num_segments_for_approximation = 100)#If running this line produces no error it means it is working
     #NOTE: If we take approximations of degree around 25 the error in norm becomes e-08 which is considered too large by our very tough test.
-    #Main EXAMPLE: Computation of a Tchebyshev series
+    #First EXAMPLE: Computation of a Tchebyshev series
     x = sp.symbols("x")
     h = sp.sqrt(4-x**2)/(2*sp.pi) #Semicircle law density
     left_bound = -2.0
@@ -189,6 +230,131 @@ if __name__=="__main__":
     ax.grid()
     fig.legend()
     fig.show()
+
+    #Second EXAMPLE: Computation of a Fourier series
+    x = sp.symbols("x")
+    h = 2.0*sp.sqrt(1-x**2)/(sp.pi) #Semicircle law density
+    left_bound = -1.0
+    right_bound = 1.0
+    max_degree = 50
+    #We compute the chebyshev coefficients
+    h_fourier_coeffs_vec = Fourier_coefficients_vector(
+        x,
+        h, 
+        max_degree = max_degree, 
+        num_segments_for_approximation =100)    
+
+    #And we plot the resulting approximation...
+    approximation_degrees = [2,3,50]
+    colors = ["g","m","r"]
+    space_grid = np.linspace(-1.0, 1.0, 100)
+    fig = plt.figure( figsize = (12,7) )
+    ax = fig.add_subplot( 111 )
+    original_function_values = [h.subs(x,v).evalf() for v in space_grid]
+    ax.plot(space_grid, original_function_values, c="b", label="semicircle", linewidth=3.5)
+    midpoint = int((len(h_fourier_coeffs_vec)-1)/2)
+
+    for index in range(len(approximation_degrees)):
+        degree_limit = approximation_degrees[index]
+        #We have already computed the approximation degrees up to 20, but we plot them gradually to see the improvement
+        partial_coeffs_vec = h_fourier_coeffs_vec[midpoint-degree_limit:midpoint+degree_limit+1]
+        fourier_approx_evaluator = evaluator_for_fourier_series(coeffs_vector = partial_coeffs_vec)
+        current_color = colors[index]
+        fourier_approx_function_values = [fourier_approx_evaluator(v) for v in space_grid]
+        ax.plot(space_grid, fourier_approx_function_values, "--", c=current_color, label=f"Fourier_approx d<= {degree_limit}", linewidth=2.0) 
+
+
+    ax.set(xlabel='Space (x)', ylabel='Value',
+        title='Density')
+    ax.grid()
+    fig.legend()
+    fig.show()
+    midpoint = int((len(h_fourier_coeffs_vec)-1)/2)
+    h_fourier_coeffs_vec[midpoint]
+
+    #THIRD Example: Computation of Fourier coefficients from the contour representation...
+    t = sp.symbols("t")       
+    path = 3.0*(sp.cos(t) + sp.I*sp.sin(t))
+    M = 500 #Increasing the number of samples seems to improve accuacy more than having several newton steps.
+    path_sample_points = np.array([path.subs(t,k*(2*sp.pi)/M).evalf() for k in range(1,M)])
+    # For a proper choice of square root we must describe it implicitly
+    z,y = sp.symbols("z,y")       
+    F = y**2-(z**2-1)#Implicit equation defining y as function of z, in this case the square root.
+    #We wish to construct the holomorphic sqrt(z**2-1) analytic on the complement of [-1,1] on the path
+    initial_value_z = path_sample_points[0]
+    initial_value_y = sp.sqrt(initial_value_z**2-1).evalf() 
+    #We compute the lifted path...
+    sqrt_function_values = homotopy_plus_Newton_implicit_function_computation(
+        dependent_variable = y,
+        independent_variable = z,
+        implicit_equation = F,
+        independent_variable_sample_path = path_sample_points,
+        dependent_var_initial_value = initial_value_y,
+        num_newton_steps_per_point = 10
+    )
+    G_function_values = (path_sample_points-sqrt_function_values)*2.0
+    #Computation of Fourier coefficients from the G(z) transform...
+    max_degree = 5 #The numerics go to hell at degree 5...
+    fourier_basis = Fourier_basis_vectors(z,max_degree)    
+    fourier_basis_values_vector = []
+    for k in range(len(fourier_basis)):
+        sp_fourier_basic_func = fourier_basis[k]
+        fourier_basis_values = np.array([sp_fourier_basic_func.subs(z,point).evalf() for point in path_sample_points])    
+        fourier_basis_values_vector.append(fourier_basis_values)
+    #Fourier coeffs...
+    fourier_coeffs_from_contour_vec = []
+    for k in range(len(fourier_basis)):
+        function_values_vector = fourier_basis_values_vector[k] * G_function_values
+        new_coefficient = (path_integral(
+            path_sample_points, 
+            function_values_vector, 
+            is_path_a_contour = True) /(2*(2*sp.pi*sp.I))).evalf()
+        fourier_coeffs_from_contour_vec.append(new_coefficient)
+
+    fourier_coeffs_from_contour_vec = np.array(fourier_coeffs_from_contour_vec)
+
+    #We compare with the other computation of Fourier coefficients...
+    x = sp.symbols("x")
+    h = 2.0*sp.sqrt(1-x**2)/(sp.pi) #Semicircle law density
+    left_bound = -1.0
+    right_bound = 1.0
+    max_degree = max_degree
+    #We compute the chebyshev coefficients
+    h_fourier_coeffs_vec = np.array(Fourier_coefficients_vector(
+        x,
+        h, 
+        max_degree = max_degree, 
+        num_segments_for_approximation =100))    
+
+    test = h_fourier_coeffs_vec - fourier_coeffs_from_contour_vec
+
+
+    #And we plot the resulting approximation...
+    approximation_degrees = [2,3,20]
+    colors = ["g","m","r"]
+    space_grid = np.linspace(-1.0, 1.0, 100)
+    fig = plt.figure( figsize = (12,7) )
+    ax = fig.add_subplot( 111 )
+    original_function_values = [h.subs(x,v).evalf() for v in space_grid]
+    ax.plot(space_grid, original_function_values, c="b", label="semicircle", linewidth=3.5)
+    midpoint = int((len(h_fourier_coeffs_vec)-1)/2)
+
+    for index in range(len(approximation_degrees)):
+        degree_limit = approximation_degrees[index]
+        #We have already computed the approximation degrees up to degree=max_degree, but we plot them gradually to see the improvement
+        partial_coeffs_vec = fourier_coeffs_from_contour_vec[midpoint-degree_limit:midpoint+degree_limit+1]
+        fourier_approx_evaluator = evaluator_for_fourier_series(coeffs_vector = partial_coeffs_vec)
+        current_color = colors[index]
+        fourier_approx_function_values = [fourier_approx_evaluator(v) for v in space_grid]
+        ax.plot(space_grid, fourier_approx_function_values, "--", c=current_color, label=f"Fourier_approx d<= {degree_limit}", linewidth=2.0) 
+
+
+    ax.set(xlabel='Space (x)', ylabel='Value',
+        title='Density via contour')
+    ax.grid()
+    fig.legend()
+    fig.show()
+
 
 
     #COMMENT: The following is a very interesting example: The convergence on the interval for the Tchebyshev weight is awfully 

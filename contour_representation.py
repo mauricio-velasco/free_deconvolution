@@ -18,6 +18,7 @@ def cauchy_estimate_for_point_outside(path_samples, G_samples, new_point):
     #Note that there should be a (-1) for preserving orientation
     return ((path_integral(new_path_samples, function_values))/((-2.0)*sp.pi*sp.I)).evalf()
 
+
 if __name__=="__main__":
     #Example 1: Semicircle density in [-1,1]    
     #We sample G along a circular contour and try to recover properties of G and 
@@ -46,6 +47,9 @@ if __name__=="__main__":
     )
     #Now we compute the values of the function G along the path, obtaining the contour representation we wanted
     G_function_values = (path_sample_points-implicit_function_values)*2.0
+    #Representation of the measure is
+    path_sample_points, G_function_values
+
     #Example 1.1: We compute the value of G at a point ABOVE/OUTSIDE from its contour representation
     new_point = (3.0+3.0*sp.I).evalf() # Outside the loop but on the first quadrant where wrong_G and the actual G function agree
     res = cauchy_estimate_for_point_outside(path_sample_points, G_function_values, new_point)
@@ -87,6 +91,8 @@ if __name__=="__main__":
         is_path_a_contour = True) /(2*sp.pi*sp.I)).evalf()
     target = 1.0/8.0
     res-target #Again remarkably small...
+
+
 
     #Example 1.3: Attempt at density recovery...
     #For density recovery we need an augmented path including segments towards the endpoints
