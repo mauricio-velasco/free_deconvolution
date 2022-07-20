@@ -166,6 +166,59 @@ def evaluator_for_fourier_series(coeffs_vector):
     return function_value
 
 
+#LEGENDRE basis interpolation
+
+def legendre_polynomials_vector(z, max_degree, expand=True):
+    """Given a sympy symbol z and a max_degree
+    returns the vector of Legendre polynomials of degree 
+    at most max_degree    
+    """
+    results = []
+    for k in range(max_degree):
+        if k==0:
+            results.append(z**0)
+        if k==1:
+            results.append(z)
+        if k>1:
+            n = k-1
+            new_poly = ((2*n+1)/(n+1))*z*results[-1]-(n/(n+1))*results[-2]
+            if expand:
+                results.append(new_poly.expand()) 
+            else:
+                results.append(new_poly) 
+
+    return results
+
+def Legendre_coefficients_vector(z,sp_func, max_degree, num_segments_for_approximation, symmetric_interval_length = 1.0):
+    L = symmetric_interval_length
+    angular_step_size = (2.0*L)/(num_segments_for_approximation)
+    angles = np.arange((-1.0)*L, L+angular_step_size, angular_step_size)#it is essential to add the extra angular step size, otherwise we miss one rectangle due to python conventions.
+    sp_new_func_values = [sp_func.subs(z,angle).evalf() for angle in angles]
+    legendre_basis = legendre_polynomials_vector(z,max_degree)
+    coeffs = []
+    #Next we compute the integrals of the products
+    for k in range(len(legendre_basis)):
+            legendre_poly = legendre_basis[k]
+            legendre_poly_values = np.array([legendre_poly.subs(z,angle).evalf() for angle in angles])
+            function_values = sp_new_func_values * legendre_poly_values
+            integral_estimate = path_integral(angles, function_values, is_path_a_contour=False)
+            coeffs.append(((2*k+1)/2.0)*integral_estimate)
+    return coeffs
+
+
+
+def evaluator_for_legendre_series(real_coeffs_vector):
+    x = sp.symbols("x")
+    max_degree = len(real_coeffs_vector)
+    legendre_basis_vectors_vector = legendre_polynomials_vector(x, max_degree = max_degree)
+
+    def function_value(point):
+        values_vector = [real_coeffs_vector[k]*(legendre_basis_vectors_vector[k].subs(x,point).evalf()) for k in range(len(real_coeffs_vector))]
+        return np.sum(values_vector)       
+
+    return function_value
+
+
 
 if __name__=="__main__":
     #Usage examples:
@@ -205,7 +258,7 @@ if __name__=="__main__":
     #And we plot the resulting approximation...
     approximation_degrees = [4,6,25]
     colors = ["g","m","r"]
-    space_grid = np.linspace(left_bound, right_bound, 500)
+    space_grid = np.linspace(left_bound, right_bound, 300)
     fig = plt.figure( figsize = (12,7) )
     ax = fig.add_subplot( 111 )
     original_function_values = [h.subs(x,v).evalf() for v in space_grid]
@@ -231,7 +284,7 @@ if __name__=="__main__":
     fig.legend()
     fig.show()
 
-    #Second EXAMPLE: Computation of a Fourier series
+    #Second EXAMPLE: Computation of Fourier series of Semicircle density...
     x = sp.symbols("x")
     h = 2.0*sp.sqrt(1-x**2)/(sp.pi) #Semicircle law density
     left_bound = -1.0
@@ -327,8 +380,6 @@ if __name__=="__main__":
         num_segments_for_approximation =100))    
 
     test = h_fourier_coeffs_vec - fourier_coeffs_from_contour_vec
-
-
     #And we plot the resulting approximation...
     approximation_degrees = [2,3,20]
     colors = ["g","m","r"]
@@ -354,6 +405,52 @@ if __name__=="__main__":
     ax.grid()
     fig.legend()
     fig.show()
+
+    #LEGENDRE polynomials
+    x = sp.symbols("x")
+    N = 40
+    Legendre_List = legendre_polynomials_vector(x, N, expand=True)
+    
+    #EXAMPLE: Computation of Legendre series of Semicircle density...
+    x = sp.symbols("x")
+    h = 2.0*sp.sqrt(1-x**2)/(sp.pi) #Semicircle law density
+    left_bound = -1.0
+    right_bound = 1.0
+    max_degree = 30
+    #We compute the Legendre coefficients
+    h_legendre_coeffs_vec = Legendre_coefficients_vector(
+        x,
+        h, 
+        max_degree = max_degree, 
+        num_segments_for_approximation =100)    
+    h_legendre_coeffs_vec = np.array(h_legendre_coeffs_vec,dtype=complex)
+    h_legendre_coeffs_vec = np.real(h_legendre_coeffs_vec)
+    
+    #And we plot the resulting approximation...
+    approximation_degrees = [2,3,15]
+    colors = ["g","m","r"]
+    space_grid = np.linspace(-1.0, 1.0, 100)
+    fig = plt.figure( figsize = (12,7) )
+    ax = fig.add_subplot( 111 )
+    original_function_values = [h.subs(x,v).evalf() for v in space_grid]
+    ax.plot(space_grid, original_function_values, c="b", label="semicircle", linewidth=3.5)
+
+    for index in range(len(approximation_degrees)):
+        degree_limit = approximation_degrees[index]
+        #We have already computed the approximation degrees up to 20, but we plot them gradually to see the improvement
+        partial_coeffs_vec = h_legendre_coeffs_vec[0:degree_limit]
+        legendre_approx_evaluator = evaluator_for_legendre_series(real_coeffs_vector = partial_coeffs_vec)
+        current_color = colors[index]
+        legendre_approx_function_values = [legendre_approx_evaluator(v) for v in space_grid]
+        ax.plot(space_grid, legendre_approx_function_values, "--", c=current_color, label=f"Legendre_approx d<= {degree_limit}", linewidth=2.0) 
+
+
+    ax.set(xlabel='Space (x)', ylabel='Value',
+        title='Density')
+    ax.grid()
+    fig.legend()
+    fig.show()
+
 
 
 

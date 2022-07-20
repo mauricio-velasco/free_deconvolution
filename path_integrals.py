@@ -54,7 +54,7 @@ if __name__ == "__main__":
     y = sp.symbols("y")
     F = y**2-(z**2-1)#Implicit equation. We wish to solve F(z,y)=0 for y as function of z
     #z-path we wish to lift:
-    radius = 1.0 #should be at least one
+    radius = 3.0 #should be at least one
     t = sp.symbols("t")       
     path = radius * (sp.cos(t) + sp.I*sp.sin(t))
     M = 100
