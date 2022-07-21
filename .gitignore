@@ -139,3 +139,5 @@ dmypy.json
 data/*
 
 *.pyc
+
+ipynb/BranchingPoints_exec.ipynb
