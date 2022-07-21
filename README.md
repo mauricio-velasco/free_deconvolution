@@ -18,7 +18,7 @@ The repository is structured as follows. We only describe the most important fil
 1. Create new virtual environment
 
 ```bash
-$ python3 -m venv .venv
+$ python3 -m venv .venv_freeDeconv
 ```
 
 (Do
@@ -28,7 +28,7 @@ if needed)
 3. Activate virtual environment
 
 ```bash
-$ source .venv/bin/activate
+$ source .venv_freeDeconv/bin/activate
 ```
 
 4. Upgrade pip, wheel and setuptools 
@@ -47,8 +47,8 @@ python setup.py develop
 
 6. (Optional) In order to use Jupyter with this virtual environment .venv
 ```bash
-pip install --user ipykernel
-python -m ipykernel install --user --name=myenv
+pip install ipykernel
+python -m ipykernel install --user --name=.venv_freeDeconv
 ```
 (see https://janakiev.com/blog/jupyter-virtual-envs/ for details)
 

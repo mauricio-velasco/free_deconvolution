@@ -108,6 +108,7 @@ celerybeat.pid
 # Environments
 .env
 .venv
+.venv_freeDeconv
 env/
 venv/
 ENV/
