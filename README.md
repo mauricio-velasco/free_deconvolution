@@ -52,6 +52,11 @@ python -m ipykernel install --user --name=.venv_freeDeconv
 ```
 (see https://janakiev.com/blog/jupyter-virtual-envs/ for details)
 
+7. Packages
+```bash
+pip install numpy matplotlib scipy sympy cvxpy
+```
+
 ## Configuration
 Nothing to do
 
