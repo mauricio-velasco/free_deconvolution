@@ -6,13 +6,18 @@ The repository is structured as follows. We only describe the most important fil
 ```bash
 ./
 |-- freeDeconvolution: Core of package. 
+|  |-- ElKaroui.py : Core functions for convex optimization
+|  |-- Sampling.py : TODO, Not implemented
 |-- ipynb: Contains Python notebooks which demonstrate how the code works
 |  |-- DemoFPT.ipynb: Illustrates the measure concentration in FPT.
 |  |-- Benchmarks.ipynb: Various useful benchmarks to guide programming choices. For example:
 |  |   - Vectorized numpy vs Loop numpy vs Sympy
 |  |   - TODO: Contour integral vs Exp convergent scheme (see Trefethen).
+|  |-- BranchingPoints.ipynb: Computation of critical points, branching points using the argument principle.
 |  |-- Contour.ipynb: Proof of concept for deconvolution using contours then OPRL reconstruction.
-|  |-- ElKaroui_CaseX.ipynb: Python implementation of the method proposed by El Karoui, using convex optimization (cvxpy).
+|  |-- ElKaroui.ipynb: Python implementation of the method proposed by El Karoui, using convex optimization (cvxpy).
+|  |-- Inversions: Exploratory notebook. Future uncertain.
+|  |-- Subordination.ipynb: TODO, Not implemented
 |-- tests: Unit tests
 |-- README.md: This file
 ```
