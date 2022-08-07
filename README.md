@@ -8,7 +8,11 @@ The repository is structured as follows. We only describe the most important fil
 |-- freeDeconvolution: Core of package. 
 |-- ipynb: Contains Python notebooks which demonstrate how the code works
 |  |-- DemoFPT.ipynb: Illustrates the measure concentration in FPT.
-|  |-- Inversion.ipynb: Current development file.
+|  |-- Benchmarks.ipynb: Various useful benchmarks to guide programming choices. For example:
+|  |   - Vectorized numpy vs Loop numpy vs Sympy
+|  |   - TODO: Contour integral vs Exp convergent scheme (see Trefethen).
+|  |-- Contour.ipynb: Proof of concept for deconvolution using contours then OPRL reconstruction.
+|  |-- ElKaroui_CaseX.ipynb: Python implementation of the method proposed by El Karoui, using convex optimization (cvxpy).
 |-- tests: Unit tests
 |-- README.md: This file
 ```
