@@ -51,3 +51,26 @@ def split_box( box ):
 
 def box_midpoint( box ):
     return 0.5*( box['top_left'] + box['bottom_right'] )
+
+def box_radius( box ):
+    return max( box['width'], box['height'] )
+
+def plot_box( box, mesh_size, color, plotlib):
+    interval =  np.linspace( 0,1, mesh_size)
+    segments = []
+
+    s = box['bottom_right'] + interval*( box['top_right'] - box['bottom_right'] )
+    segments.append( s )
+    s = box['top_right'] + interval*( box['top_left'] - box['top_right'] )
+    segments.append( s )
+    s = box['top_left'] + interval*( box['bottom_left'] - box['top_left'] )
+    segments.append( s )
+    s = box['bottom_left'] + interval*( box['bottom_right'] - box['bottom_left'] )
+    segments.append( s )
+
+    for s in segments:
+        x = np.real(s)
+        y = np.imag(s)
+        plotlib.plot( x, y, c=color)      
+
+    return
