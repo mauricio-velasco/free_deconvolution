@@ -6,8 +6,11 @@ The repository is structured as follows. We only describe the most important fil
 ```bash
 ./
 |-- freeDeconvolution: Core of package. 
-|  |-- ElKaroui.py : Core functions for convex optimization
-|  |-- Sampling.py : TODO, Not implemented
+|  |-- boxes.py    : Functions handling boxes for dichotomy searches on the complex plane
+|  |-- core.py     : Core for our method
+|  |-- elkaroui.py : Core functions for convex optimization
+|  |-- sampling.py : Sampling of empirical measures
+|  |-- utils.py    : misc useful functions
 |-- ipynb: Contains Python notebooks which demonstrate how the code works
 |  |-- DemoFPT.ipynb: Illustrates the measure concentration in FPT.
 |  |-- Benchmarks.ipynb: Various useful benchmarks to guide programming choices. For example:
