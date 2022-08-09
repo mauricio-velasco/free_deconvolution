@@ -23,13 +23,20 @@ def build_dictionary( nu, c, spectrum):
     Z = np.array( Z )
     return Z
 
-def perform_cvx_optimization( dictionary, T, c, norm_type, verbose=False):
+def perform_cvx_optimization( dictionary, T, c, norm_type, verbose=False, measures="point"):
   Z, nu  = dictionary
   assert(len(Z) == len(nu))
 
   print( "Building cvxpy program..." )
   # Weights
-  W = cp.Variable(len(T),complex=False)
+  if  measures == "point": 
+      W = cp.Variable(len(T),complex=False)
+  else : 
+    W1 = cp.Variable(len(T),complex=False)
+    W2 = cp.Variable(len(T)-1,complex=False)
+    W3 = cp.Variable(len(T)-1,complex=False)
+  
+
   # Constrains
   const=[]
 
@@ -39,9 +46,31 @@ def perform_cvx_optimization( dictionary, T, c, norm_type, verbose=False):
       # Does not work
       # e = 1/nu[i] + Z[i] - c*sum([T[j]*W[j]/(1+T[j]*nu[i]) for j in range(len(T)) ])
       # Strangely works ==> cvxpy has a bad overloading of operators * / + - ?
-      integrand = T/(1+T*nu[i])
-      summand   = [ W[j]*integrand[j] for j in range(len(T)) ]
-      e_i = 1/nu[i] + Z[i] - c*sum(summand)
+      if measures=="point":
+          integrand = T/(1+T*nu[i])
+          summand   = [ W[j]*integrand[j] for j in range(len(T)) ]
+      else : 
+           #point part
+          integrand1 = T/(1+T*nu[i])
+          summand1   = [ W1[j]*integrand1[j] for j in range(len(T)) ]
+           #constant part
+          
+          integrand2 = [   1/nu[i] -(np.log(nu[i]*T[j+1]+1)-np.log(nu[i]*T[j]+1))/(nu[i]**2)/(T[j+1]-T[j])  for j in range(len(T)-1) ] 
+          summand2   = [ W2[j]*integrand2[j] for j in range(len(T)-1) ]
+          # Linear part
+          #does not work
+            # antiderivative of  (x^2/ (1+x y)
+        ##  
+        #def f(x,y):
+         #   return (x*(y*x-2)/(2*(y**2)) + np.log(y*x+1)/(y**3)        
+          integrand3 = [   ((T[j+1]*(nu[i]*T[j+1]-2)/(2*(nu[i]**2)) + np.log(nu[i]*T[j+1]+1)/(nu[i]**3))- (T[j]*(nu[i]*T[j]-2)/(2*(nu[i]**2)) + np.log(nu[i]*T[j]+1)/(nu[i]**3)))/ ((T[j+1]**2-T[j]**2) /2)  for j in range(len(T)-1) ] 
+          summand3   = [ W3[j]*integrand3[j] for j in range(len(T)-1) ]            
+           #linear part
+      if measures=="point":    
+          e_i = 1/nu[i] + Z[i] - c*sum(summand)
+      else :
+
+          e_i = 1/nu[i] + Z[i] - c*sum(summand1)-c*sum(summand2)-c*sum(summand3)
       e_array.append( e_i )
   e_vector = cp.bmat( [e_array] )
 
@@ -65,11 +94,23 @@ def perform_cvx_optimization( dictionary, T, c, norm_type, verbose=False):
     objective = cp.Minimize(e)
 
   # Final constrains
-  const.append(W>=0)
-  const.append(sum(W)==1)
-
+  if measures=="point":
+      const.append(W>=0)
+      const.append(sum(W)==1)
+  else : 
+      const.append(W1>=0)
+      const.append(W2>=0)
+      const.append(W3>=0)
+      const.append(sum(W1)+sum(W2)+sum(W3)==1)
+     
+     
   print( "Solving the convex problem...")
   problem = cp.Problem(objective, const)
   result  = problem.solve(verbose=verbose)
-
-  return W.value, objective.value
+  
+  if measures=="point": 
+    return W.value, objective.value
+  else :
+    print(sum(W1.value))
+    return [W1.value,W2.value,W3.value], objective.value
+    
