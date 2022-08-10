@@ -2,6 +2,10 @@ import scipy
 import numpy as np
 
 
+scenario2_weights = np.array( [1, 1, 1] )
+scenario2_weights = scenario2_weights/np.sum( scenario2_weights )
+scenario2_support = np.array( [0.5, 1, 4] )
+
 def initiate_scenario( Scenario, N ):
     # Create population spectrum
     if Scenario=="Case1":
@@ -13,9 +17,8 @@ def initiate_scenario( Scenario, N ):
     elif Scenario=="Case2":
         c = 0.3
         p = int(c*N)
-        weights = np.array( [1, 1, 1] )
-        weights = weights/np.sum( weights )
-        support = np.array( [0.5, 1, 4] )
+        weights = scenario2_weights
+        support = scenario2_support
 
         population_cdf = np.cumsum( weights )
 
