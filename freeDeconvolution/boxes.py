@@ -55,6 +55,17 @@ def box_midpoint( box ):
 def box_radius( box ):
     return max( box['width'], box['height'] )
 
+def box_to_path( box, mesh_size):
+       interval =  np.linspace( 0, 1, mesh_size)
+       path = []
+       for segment in box_segments_enum:
+              vector = box[ segment[1] ] - box[ segment[0] ]
+              origin = box[ segment[0] ]
+              s = origin + interval*vector
+              #
+              path = path + list(s)
+       return path
+
 def plot_box( box, mesh_size, color, plotlib):
     interval =  np.linspace( 0,1, mesh_size)
     segments = []
