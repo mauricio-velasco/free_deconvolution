@@ -30,6 +30,13 @@ class DiscreteMeasure:
     def G_empirical(self, z):
         array = z[...,None]-self.support[...,:]
         return np.sum( 1/array, axis=-1)/len(self.support)
+        # if self.weights is None:
+        #     array = z[...,None]-self.support[...,:]
+        #     return np.sum( 1/array, axis=-1)/len(self.support)
+        # else:
+        #     array = z[...,None]-self.support[...,:]
+        #     array = weights[None,]*array
+        #     return np.sum( 1/array, axis=-1)
 
     def G_prime_empirical(self, z):
         array = z[...,None]-self.support[...,:]

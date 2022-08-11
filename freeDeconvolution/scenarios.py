@@ -15,10 +15,41 @@ def initiate_scenario( Scenario, N ):
         population_spectrum = np.ones( p )
 
     elif Scenario=="Case2":
+        c = 0.2
+        p = int(c*N)
+        weights = np.array( [0.5, 0.5] )
+        support = np.array( [1, 2] )
+
+        population_cdf = np.cumsum( weights )
+
+        population_spectrum = np.zeros( (p,) )
+        block_begin = 0
+        for i in range( len(weights) ):
+            block_end = int( population_cdf[i]*p )
+            population_spectrum[block_begin:block_end] = support[i]
+            block_begin = block_end
+
+    elif Scenario=="Case21":
         c = 0.3
         p = int(c*N)
         weights = scenario2_weights
         support = scenario2_support
+
+        population_cdf = np.cumsum( weights )
+
+        population_spectrum = np.zeros( (p,) )
+        block_begin = 0
+        for i in range( len(weights) ):
+            block_end = int( population_cdf[i]*p )
+            population_spectrum[block_begin:block_end] = support[i]
+            block_begin = block_end
+
+
+    elif Scenario=="Case22":
+        c = 0.2
+        p = int(c*N)
+        weights = np.array( [1, 1, 1] )/3
+        support = np.array( [1, 5, 20] )
 
         population_cdf = np.cumsum( weights )
 
