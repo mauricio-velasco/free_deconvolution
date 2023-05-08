@@ -31,7 +31,8 @@ def jacobi_from_moments( mom_array, debug=False ):
     # https://stackoverflow.com/questions/49101574/scipy-numpy-cholesky-while-checking-if-positive-definite
     (cholesky, minor) = scipy.linalg.lapack.dpotrf( mom_matrix, lower=True  )
     if minor > 0:
-        print( f'''{minor}-th principal minor is not positive definite''')
+        if debug:
+            print( f'''{minor}-th principal minor is not positive definite''')
         mom_matrix = mom_matrix[:minor, :minor]
         cholesky   = cholesky[:minor, :minor]
         #
