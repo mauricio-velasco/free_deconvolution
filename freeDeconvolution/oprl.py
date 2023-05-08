@@ -33,6 +33,7 @@ def jacobi_from_moments( mom_array, debug=False ):
     if minor > 0:
         print( f'''{minor}-th principal minor is not positive definite''')
         mom_matrix = mom_matrix[:minor, :minor]
+        cholesky   = cholesky[:minor, :minor]
         #
         n = minor - 1
 
