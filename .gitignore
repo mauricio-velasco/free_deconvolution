@@ -120,5 +120,7 @@ data/*
 
 #Temporary files
 experiments/*.json
+experiments/*.csv
+experiments/~lock.* 
 experiments/dump/*.json
 experiments/*.png
