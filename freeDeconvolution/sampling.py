@@ -9,5 +9,6 @@ def sample_wishart( p, N, population_spectrum=None ):
     G = np.dot( np.diag( np.sqrt(population_spectrum)) , G)
     W = G.dot( G.T )
     W = W/N
-    diag, U = np.linalg.eig(W)
+    # diag, U = np.linalg.eig(W) # old, slow
+    diag = np.linalg.eigvalsh(W)
     return np.sort( diag )

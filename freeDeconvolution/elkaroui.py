@@ -27,7 +27,7 @@ def perform_cvx_optimization( dictionary, T, c, norm_type, verbose=False):
   Z, nu  = dictionary
   assert(len(Z) == len(nu))
 
-  print( "Building cvxpy program..." )
+  #print( "Building cvxpy program..." )
   # Weights
   W = cp.Variable(len(T),complex=False)
   # Constrains
@@ -68,7 +68,7 @@ def perform_cvx_optimization( dictionary, T, c, norm_type, verbose=False):
   const.append(W>=0)
   const.append(sum(W)==1)
 
-  print( "Solving the convex problem...")
+  #print( "Solving the convex problem...")
   problem = cp.Problem(objective, const)
   result  = problem.solve(verbose=verbose)
 
