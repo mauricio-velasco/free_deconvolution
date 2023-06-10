@@ -124,3 +124,5 @@ experiments/*.csv
 experiments/.~lock.* 
 experiments/dump/*.json
 experiments/*.png
+experiments/Exp*/
+experiments/report*
