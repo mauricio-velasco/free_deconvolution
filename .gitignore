@@ -126,3 +126,4 @@ experiments/dump/*.json
 experiments/*.png
 experiments/Exp*/
 experiments/report*
+ipynb/showcase/TalkDemo/
