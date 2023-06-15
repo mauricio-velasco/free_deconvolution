@@ -18,6 +18,9 @@ def jacobi_from_moments( mom_array, debug=False ):
     for index in range( n+2 ):
         mom_matrix[index,:] = mom_array[index:(index+n+2)]
 
+    # if debug:
+    #     print( "Moment matrix: ", mom_matrix)
+
     # Cholesky
     # try:
     #     cholesky = scipy_cholesky( mom_matrix, lower=True )
